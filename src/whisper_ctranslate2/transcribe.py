@@ -74,7 +74,7 @@ class Transcribe:
             condition_on_previous_text=options.condition_on_previous_text,
             initial_prompt=options.initial_prompt,
             # suppress_tokens = options.suppress_tokens,
-            word_timestamps=options.word_timestamps,
+            word_timestamps=True,
         )
 
         print(
@@ -88,11 +88,26 @@ class Transcribe:
         with tqdm.tqdm(
             total=info.duration, unit="seconds", disable=verbose is not False
         ) as pbar:
+            words = 0
+            start = 0
+            pending_text = ""
             for segment in segments:
-                if verbose:
-                    start, end, text = segment.start, segment.end, segment.text
-                    line = f"[{format_timestamp(start)} --> {format_timestamp(end)}] {text}"
-                    print(make_safe(line))
+#                if verbose:
+                start, end, text  = segment.start, segment.end, segment.text
+                line = f"[{format_timestamp(start)} --> {format_timestamp(end)}] {text}"
+#                   print(make_safe(line))                    
+                
+                for word in segment.words:
+#                        print("[%.2fs -> %.2fs] %s" % (word.start, word.end, word.word))
+                    if words == 5:
+                        print("![%.2fs -> %.2fs] %s" % (start, word.end, pending_text))
+                        words = 0
+                        start =  word.end
+                        pending_text = ""
+                    words += 1   
+                    pending_text += word.word
+#                    print(f"{word.word} -> {pending_text}")
+                            
 
                 list_segments.append(segment)
                 duration = segment.end - last_pos
