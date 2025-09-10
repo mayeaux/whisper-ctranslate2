@@ -201,15 +201,26 @@ class Transcribe:
                 start, end, text = segment.start, segment.end, segment.text
                 all_text += segment.text
 
-                if verbose or options.print_colors:
-                    if options.print_colors and segment.words:
-                        text = self._get_colored_text(segment.words)
-                    else:
-                        text = segment.text
+                # Prepare the display text exactly as in verbose mode
+                # When print_colors is enabled and word-level timestamps exist, use colored words; otherwise use plain text
+                if options.print_colors and segment.words:
+                    text = self._get_colored_text(segment.words)
+                else:
+                    text = segment.text
 
-                    if not live:
-                        line = f"[{format_timestamp(start)} --> {format_timestamp(end)}] {text}"
-                        print(make_safe(line))
+                # Build the same line string verbose mode would print
+                line = f"[{format_timestamp(start)} --> {format_timestamp(end)}] {text}"
+
+                # Print to stdout when verbose or color preview is enabled (and not in live mode)
+                if (verbose or options.print_colors) and not live:
+                    print(make_safe(line))
+
+                # When verbose is False, also append the line to ./log.txt so it can be tailed in real time
+                if not verbose and not live:
+                    # Open in append mode, write the line, and flush to ensure real-time availability for `tail -f`
+                    with open("log.txt", "a", encoding=system_encoding) as logfile:
+                        logfile.write(make_safe(line) + "\n")
+                        logfile.flush()
 
                 segment_dict = segment._asdict()
                 if segment.words:
