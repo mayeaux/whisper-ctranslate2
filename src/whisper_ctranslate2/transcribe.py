@@ -1,4 +1,5 @@
 import sys
+import os
 
 from typing import BinaryIO, List, NamedTuple, Optional, Union
 
@@ -215,10 +216,12 @@ class Transcribe:
                 if (verbose or options.print_colors) and not live:
                     print(make_safe(line))
 
-                # When verbose is False, also append the line to ./log.txt so it can be tailed in real time
+                # When verbose is False, also append the line to ~/log.txt so it can be tailed in real time
                 if not verbose and not live:
+                    # Resolve the user's home directory so "~" works across platforms
+                    logfile_path = os.path.expanduser("~/log.txt")
                     # Open in append mode, write the line, and flush to ensure real-time availability for `tail -f`
-                    with open("log.txt", "a", encoding=system_encoding) as logfile:
+                    with open(logfile_path, "a", encoding=system_encoding) as logfile:
                         logfile.write(make_safe(line) + "\n")
                         logfile.flush()
 
